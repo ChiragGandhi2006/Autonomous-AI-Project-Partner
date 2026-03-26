@@ -1,39 +1,64 @@
-import os
-import google.generativeai as genai
-from dotenv import load_dotenv
+from transformers import AutoModelForCausalLM, AutoTokenizer
+import torch
 
-load_dotenv(override=True)
 
 class LLMService:
+
     def __init__(self):
-        api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        self.model_name = "Qwen/Qwen2.5-1.5B-Instruct"
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        if not api_key:
-            raise RuntimeError("❌ GEMINI_API_KEY / GOOGLE_API_KEY not found")
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
 
-        print("✅ Gemini REAL MODE ENABLED")
+        self.model = AutoModelForCausalLM.from_pretrained(
+            self.model_name,
+            torch_dtype=torch.float32,
+            device_map="auto"
+        )
 
-        genai.configure(api_key=api_key)
+    # 🔥 CLEAN OUTPUT (MAIN FIX)
+    def clean_text(self, text, prompt):
 
-        # Stable free-tier model
-        self.model = genai.GenerativeModel("gemini-3-flash-preview")
+        # Remove prompt echo
+        if prompt in text:
+            text = text.replace(prompt, "")
 
-    # 🔥 THIS METHOD WAS MISSING
-    def generate(self, prompt: str) -> str:
-        try:
-            response = self.model.generate_content(prompt)
-            return response.text.strip()
+        # Remove duplicates
+        lines = text.split("\n")
+        unique_lines = []
 
-        except Exception as e:
-            error = str(e)
+        for line in lines:
+            line = line.strip()
+            if line and line not in unique_lines:
+                unique_lines.append(line)
 
-            # Graceful fallback for quota / demo
-            if "429" in error or "quota" in error.lower():
-                return (
-                    "⚠️ Gemini API quota exceeded.\n\n"
-                    "✔ Backend system working\n"
-                    "✔ Agent pipeline functional\n"
-                    "✔ This is a fallback response for demo\n"
-                )
+        return "\n".join(unique_lines)
 
-            return f"[GEMINI ERROR] {error}"
+    def get_max_tokens(self, prompt):
+        if "code" in prompt.lower():
+            return 700
+        return 250
+
+    def generate(self, prompt):
+
+        max_tokens = self.get_max_tokens(prompt)
+
+        inputs = self.tokenizer(
+            prompt,
+            return_tensors="pt",
+            truncation=True,
+            max_length=512
+        ).to(self.device)
+
+        with torch.no_grad():
+            outputs = self.model.generate(
+                **inputs,
+                max_new_tokens=max_tokens,
+                temperature=0.2,
+                do_sample=False,
+                pad_token_id=self.tokenizer.eos_token_id
+            )
+
+        response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+
+        return self.clean_text(response, prompt)

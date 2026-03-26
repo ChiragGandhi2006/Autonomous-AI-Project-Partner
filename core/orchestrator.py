@@ -1,7 +1,9 @@
 from agents.ideation_agent import IdeationAgent
 from agents.planning_agent import PlanningAgent
+from agents.coder_agent import CoderAgent
 from services.llm_service import LLMService
 from memory.memory_manager import MemoryManager
+
 
 class Orchestrator:
     def __init__(self):
@@ -10,75 +12,52 @@ class Orchestrator:
 
         self.ideation_agent = IdeationAgent(self.memory, self.llm)
         self.planning_agent = PlanningAgent(self.memory, self.llm)
+        self.coder_agent = CoderAgent(self.memory, self.llm)
 
-    # ---------------------------------
-    # STEP 1: START PROJECT
-    # ---------------------------------
-    def initialize_project(self, project_goal):
+    def initialize_project(self, goal):
+
         self.memory.clear_all()
 
-        idea = self.ideation_agent.run(project_goal)
+        idea = self.ideation_agent.run(goal)
         plan = self.planning_agent.run(idea)
 
         return {
             "idea": idea,
-            "plan": plan,
-            "options": [
-                "Generate detailed code",
-                "Improve the plan",
-                "Add extra features",
-                "Debug existing code"
-            ]
+            "plan": plan
         }
 
-    # ---------------------------------
-    # STEP 2: CONTINUE PROJECT
-    # ---------------------------------
     def handle_action(self, action):
-        try:
-            if action == "Generate detailed code":
-                result = self._generate_code()
 
-            elif action == "Improve the plan":
-                result = self.planning_agent.improve()
+        action_lower = action.lower()
 
-            elif action == "Add extra features":
-                result = self.ideation_agent.add_features()
+        # CODE
+        if any(k in action_lower for k in [
+            "code", "program", "function", "binary", "algorithm"
+        ]):
+            return self._generate_code(action)
 
-            elif action == "Debug existing code":
-                result = "Debugging logic will be added soon."
+        # PLAN IMPROVE
+        elif "improve" in action_lower:
+            return self.planning_agent.improve()
 
-            else:
-                result = "Unknown action."
+        # CONTINUE
+        else:
+            last = self.memory.get_short_term("last_output")
 
-            return {
-                "success": True,
-                "action": action,
-                "result": result
-            }
+            prompt = f"""
+Continue based on:
 
-        except Exception as e:
-            return {
-                "success": False,
-                "action": action,
-                "result": f"Error occurred: {str(e)}"
-            }
+{last}
 
-    # ---------------------------------
-    # INTERNAL HELPER
-    # ---------------------------------
-    def _generate_code(self):
+User:
+{action}
+"""
+
+            return self.llm.generate(prompt)
+
+    def _generate_code(self, action):
+
         idea = self.memory.get_short_term("idea")
         plan = self.memory.get_short_term("plan")
 
-        prompt = f"""
-        Generate full implementation code for this project.
-
-        IDEA:
-        {idea}
-
-        PLAN:
-        {plan}
-        """
-
-        return self.llm.generate(prompt)
+        return self.coder_agent.run(idea, plan, action)

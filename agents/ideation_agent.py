@@ -4,29 +4,29 @@ class IdeationAgent:
         self.llm = llm
 
     def run(self, project_goal):
+
         prompt = f"""
-You are an expert AI project architect.
+You are an AI product expert.
 
-Generate the project idea STRICTLY in this format:
+Give ONLY project idea.
 
-IDEA_TITLE:
-LEVEL:
-OBJECTIVE:
-KEY_FEATURES:
-TECH_STACK:
-REAL_WORLD_USER:
+FORMAT:
+1. Title
+2. Problem
+3. Solution
+4. Features
 
-Project Goal:
+RULES:
+- Do NOT generate code
+- Do NOT repeat text
+
+INPUT:
 {project_goal}
 """
-        idea = self.llm.generate(prompt)
 
-        # ✅ CORRECT MEMORY METHOD
-        self.memory.add_short_term("idea", idea)
+        result = self.llm.generate(prompt)
 
-        return idea
+        self.memory.add_short_term("idea", result)
+        self.memory.add_short_term("last_output", result)
 
-    def add_features(self):
-        idea = self.memory.get_short_term("idea")
-        prompt = f"Suggest extra features for this project:\n{idea}"
-        return self.llm.generate(prompt)
+        return result

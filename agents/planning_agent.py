@@ -4,31 +4,50 @@ class PlanningAgent:
         self.llm = llm
 
     def run(self, idea):
+
         prompt = f"""
-You are a senior project planner.
+You are a senior software architect.
 
-Create a STEP-BY-STEP PLAN in this exact format:
+Give ONLY technical plan.
 
-PHASE_1:
-PHASE_2:
-PHASE_3:
-PHASE_4:
-FINAL_OUTPUT:
+STRICT RULES:
+- DO NOT repeat idea
+- DO NOT repeat sentences
+- MAX 5 lines per section
 
-Project Idea:
+OUTPUT:
+
+1. Architecture:
+2. Tech Stack:
+3. Steps:
+4. Challenges:
+
+IDEA:
 {idea}
 """
-        plan = self.llm.generate(prompt)
 
-        # ✅ CORRECT MEMORY METHOD
-        self.memory.add_short_term("plan", plan)
+        result = self.llm.generate(prompt)
 
-        return plan
+        # Trim unwanted part
+        if "1." in result:
+            result = result[result.index("1."):]
+
+        self.memory.add_short_term("plan", result)
+        self.memory.add_short_term("last_output", result)
+
+        return result
 
     def improve(self):
         plan = self.memory.get_short_term("plan")
-        prompt = f"Improve this plan:\n{plan}"
-        improved = self.llm.generate(prompt)
 
-        self.memory.add_short_term("plan", improved)
-        return improved
+        prompt = f"""
+Improve this plan.
+
+RULES:
+- Do NOT repeat content
+
+PLAN:
+{plan}
+"""
+
+        return self.llm.generate(prompt)

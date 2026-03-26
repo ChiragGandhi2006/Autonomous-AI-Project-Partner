@@ -1,6 +1,20 @@
 class FeedbackAgent:
-    def __init__(self, memory):
+    def __init__(self, memory, llm):
         self.memory = memory
+        self.llm = llm
 
-    def store(self, feedback):
-        self.memory.add_long_term("user_feedback", feedback)
+    def run(self, output):
+
+        prompt = f"""
+Give feedback on this output.
+
+FORMAT:
+- Strengths
+- Weaknesses
+- Suggestions
+
+OUTPUT:
+{output}
+"""
+
+        return self.llm.generate(prompt)

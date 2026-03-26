@@ -3,7 +3,20 @@ class ReviewAgent:
         self.memory = memory
         self.llm = llm
 
-    def run(self):
-        code = self.memory.get_short_term("generated_code")
-        prompt = f"Review and improve this code:\n{code}"
+    def run(self, code):
+
+        prompt = f"""
+You are a senior code reviewer.
+
+Analyze the code.
+
+FORMAT:
+1. Issues
+2. Improvements
+3. Optimization Suggestions
+
+CODE:
+{code}
+"""
+
         return self.llm.generate(prompt)
