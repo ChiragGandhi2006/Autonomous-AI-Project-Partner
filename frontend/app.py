@@ -7,8 +7,18 @@ import os
 # Load env
 load_dotenv(override=True)
 
-# Backend
+# Backend (existing)
 from backend.controllers.project_controller import start_project, continue_project
+
+# 🔥 NEW: Router (Hybrid AI)
+from core.router import Router
+
+
+# ── INIT ROUTER (ONLY ONCE) ────────────────────────────────
+if "router" not in st.session_state:
+    st.session_state.router = Router()
+
+router = st.session_state.router
 
 
 # ── FILE STORAGE FUNCTIONS ─────────────────────────────────
@@ -17,6 +27,7 @@ def load_projects():
         with open("projects.json", "r") as f:
             return json.load(f)
     return {}
+
 
 def save_projects(data):
     with open("projects.json", "w") as f:
@@ -78,7 +89,7 @@ if st.sidebar.button("➕ New Project"):
 current = st.session_state.current_project
 project_data = st.session_state.projects[current]
 
-# ✏️ Rename Project (FIXED)
+# ✏️ Rename Project
 new_name = st.sidebar.text_input(
     "✏️ Rename Project",
     value=project_data["name"],
@@ -133,10 +144,12 @@ if user_input:
     with st.chat_message("user"):
         st.markdown(user_input)
 
-    # FIRST MESSAGE → START PROJECT
-    if not project_data["started"]:
+    # 🔥 NEW: Detect coding query
+    is_code = router.is_coding_query(user_input)
 
-        # 🔥 AUTO PROJECT NAMING (FIXED)
+    # FIRST MESSAGE → START PROJECT (only if NOT coding)
+    if not project_data["started"] and not is_code:
+
         project_data["name"] = generate_project_name(user_input)
         save_projects(st.session_state.projects)
 
@@ -165,7 +178,25 @@ if user_input:
 
         project_data["started"] = True
 
-    # NEXT MESSAGES → CONTINUE PROJECT
+    # 🔥 CODING QUERY → BYPASS PROJECT SYSTEM
+    elif is_code:
+
+        with st.chat_message("assistant"):
+            with st.spinner("Generating code... ⚡"):
+                try:
+                    response_text = router.handle_prompt(user_input)
+                except Exception as e:
+                    response_text = f"Error: {str(e)}"
+
+            st.markdown(response_text)
+
+        messages.append({
+            "role": "assistant",
+            "content": response_text
+        })
+        save_projects(st.session_state.projects)
+
+    # NORMAL CONTINUE PROJECT
     else:
 
         with st.chat_message("assistant"):

@@ -3,62 +3,72 @@ import torch
 
 
 class LLMService:
-
     def __init__(self):
         self.model_name = "Qwen/Qwen2.5-1.5B-Instruct"
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+        print(f"🚀 Loading LLM on {self.device}...")
 
+        # Load tokenizer
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            self.model_name,
+            trust_remote_code=True
+        )
+
+        # Load model
         self.model = AutoModelForCausalLM.from_pretrained(
             self.model_name,
-            torch_dtype=torch.float32,
+            torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,
             device_map="auto"
         )
 
-    # 🔥 CLEAN OUTPUT (MAIN FIX)
-    def clean_text(self, text, prompt):
+        print("✅ LLM Loaded Successfully!")
 
-        # Remove prompt echo
-        if prompt in text:
-            text = text.replace(prompt, "")
+    # 🔹 MAIN FUNCTION (used by router)
+    def generate_response(self, prompt: str) -> str:
+        try:
+            # Qwen chat format (IMPORTANT)
+            messages = [
+                {"role": "system", "content": "You are a helpful AI assistant."},
+                {"role": "user", "content": prompt}
+            ]
 
-        # Remove duplicates
-        lines = text.split("\n")
-        unique_lines = []
-
-        for line in lines:
-            line = line.strip()
-            if line and line not in unique_lines:
-                unique_lines.append(line)
-
-        return "\n".join(unique_lines)
-
-    def get_max_tokens(self, prompt):
-        if "code" in prompt.lower():
-            return 700
-        return 250
-
-    def generate(self, prompt):
-
-        max_tokens = self.get_max_tokens(prompt)
-
-        inputs = self.tokenizer(
-            prompt,
-            return_tensors="pt",
-            truncation=True,
-            max_length=512
-        ).to(self.device)
-
-        with torch.no_grad():
-            outputs = self.model.generate(
-                **inputs,
-                max_new_tokens=max_tokens,
-                temperature=0.2,
-                do_sample=False,
-                pad_token_id=self.tokenizer.eos_token_id
+            # Convert to proper format
+            text = self.tokenizer.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=True
             )
 
-        response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+            inputs = self.tokenizer(
+                text,
+                return_tensors="pt"
+            ).to(self.device)
 
-        return self.clean_text(response, prompt)
+            # Generate response
+            outputs = self.model.generate(
+                **inputs,
+                max_new_tokens=300,
+                temperature=0.7,
+                top_p=0.9,
+                do_sample=True
+            )
+
+            # Decode output
+            response = self.tokenizer.decode(
+                outputs[0],
+                skip_special_tokens=True
+            )
+
+            # 🔥 Clean output (remove prompt part)
+            if "assistant" in response.lower():
+                response = response.split("assistant")[-1]
+
+            return response.strip()
+
+        except Exception as e:
+            return f"LLM Error: {str(e)}"
+
+    # 🔹 OPTIONAL (BACKWARD COMPATIBILITY)
+    def generate(self, prompt: str) -> str:
+        return self.generate_response(prompt)
