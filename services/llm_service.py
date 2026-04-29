@@ -3,72 +3,75 @@ import torch
 
 
 class LLMService:
+
     def __init__(self):
         self.model_name = "Qwen/Qwen2.5-1.5B-Instruct"
+
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        print(f"🚀 Loading LLM on {self.device}...")
+        print(f"🚀 Loading model on: {self.device}")
 
-        # Load tokenizer
         self.tokenizer = AutoTokenizer.from_pretrained(
             self.model_name,
             trust_remote_code=True
         )
 
-        # Load model
         self.model = AutoModelForCausalLM.from_pretrained(
             self.model_name,
             torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,
             device_map="auto"
         )
 
-        print("✅ LLM Loaded Successfully!")
+        # ✅ KEEP SYSTEM PROMPT GENERIC (VERY IMPORTANT)
+        self.system_prompt = (
+            "You are a helpful AI assistant. "
+            "Give clear, concise, and relevant answers."
+        )
 
-    # 🔹 MAIN FUNCTION (used by router)
-    def generate_response(self, prompt: str) -> str:
-        try:
-            # Qwen chat format (IMPORTANT)
-            messages = [
-                {"role": "system", "content": "You are a helpful AI assistant."},
-                {"role": "user", "content": prompt}
-            ]
+    # 🔥 MAIN FUNCTION
+    def generate(self, prompt):
 
-            # Convert to proper format
-            text = self.tokenizer.apply_chat_template(
-                messages,
-                tokenize=False,
-                add_generation_prompt=True
-            )
+        messages = [
+            {
+                "role": "system",
+                "content": self.system_prompt
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
 
-            inputs = self.tokenizer(
-                text,
-                return_tensors="pt"
-            ).to(self.device)
+        # ✅ APPLY CHAT TEMPLATE
+        text = self.tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True
+        )
 
-            # Generate response
-            outputs = self.model.generate(
-                **inputs,
-                max_new_tokens=300,
-                temperature=0.7,
-                top_p=0.9,
-                do_sample=True
-            )
+        inputs = self.tokenizer(
+            text,
+            return_tensors="pt"
+        ).to(self.device)
 
-            # Decode output
-            response = self.tokenizer.decode(
-                outputs[0],
-                skip_special_tokens=True
-            )
+        outputs = self.model.generate(
+            **inputs,
+            max_new_tokens=800,
+            temperature=0.7,
+            top_p=0.9,
+            do_sample=True
+        )
 
-            # 🔥 Clean output (remove prompt part)
-            if "assistant" in response.lower():
-                response = response.split("assistant")[-1]
+        decoded = self.tokenizer.decode(
+            outputs[0],
+            skip_special_tokens=True
+        )
 
-            return response.strip()
+        # ✅ REMOVE PROMPT PART (VERY IMPORTANT)
+        response = decoded[len(text):].strip()
 
-        except Exception as e:
-            return f"LLM Error: {str(e)}"
+        return response
 
-    # 🔹 OPTIONAL (BACKWARD COMPATIBILITY)
-    def generate(self, prompt: str) -> str:
-        return self.generate_response(prompt)
+
+# ✅ SINGLETON INSTANCE
+llm_service = LLMService()
