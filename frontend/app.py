@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import warnings
 import logging
 import json
@@ -9,6 +10,12 @@ from pathlib import Path
 
 import streamlit as st
 from dotenv import load_dotenv
+=======
+<<<<<<< HEAD
+import warnings
+import logging
+import os
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
 
 # ---------------- WARNING SUPPRESSION ----------------
 warnings.filterwarnings("ignore")
@@ -34,7 +41,25 @@ os.environ[
 ] = "3"
 
 
+<<<<<<< HEAD
 # ---------------- PATH SETUP ----------------
+=======
+# ---------------- NORMAL IMPORTS ----------------
+import json
+import re
+=======
+import json
+import os
+>>>>>>> 8e40865095191439b0aa74490add438f1c48bbb0
+import sys
+import uuid
+from pathlib import Path
+
+import streamlit as st
+from dotenv import load_dotenv
+
+<<<<<<< HEAD
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
 sys.path.append(
     os.path.abspath(
         os.path.join(
@@ -43,6 +68,13 @@ sys.path.append(
         )
     )
 )
+<<<<<<< HEAD
+=======
+=======
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+>>>>>>> 8e40865095191439b0aa74490add438f1c48bbb0
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
 
 load_dotenv(override=True)
 
@@ -52,6 +84,10 @@ from services.llm_service import llm_service
 from services.media_analysis_service import MediaAnalysisService
 
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(
     page_title="AI Project Partner",
@@ -61,6 +97,13 @@ st.set_page_config(
 
 
 # ---------------- SESSION ----------------
+<<<<<<< HEAD
+=======
+=======
+st.set_page_config(page_title="AI Project Partner", page_icon="⚡")
+
+>>>>>>> 8e40865095191439b0aa74490add438f1c48bbb0
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
 if "router" not in st.session_state:
     st.session_state.router = Router()
 
@@ -71,6 +114,10 @@ router = st.session_state.router
 media_analyzer = st.session_state.media_analyzer
 
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
 # ---------------- PROJECT STORAGE ----------------
 def load_projects():
 
@@ -88,10 +135,23 @@ def load_projects():
         except Exception:
             return {}
 
+<<<<<<< HEAD
+=======
+=======
+def load_projects():
+    if os.path.exists("projects.json"):
+        with open("projects.json", "r", encoding="utf-8") as f:
+            return json.load(f)
+>>>>>>> 8e40865095191439b0aa74490add438f1c48bbb0
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
     return {}
 
 
 def save_projects(data):
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
 
     with open(
         "projects.json",
@@ -190,10 +250,16 @@ def save_uploaded_files(
 
     for uploaded_file in uploaded_files:
 
+<<<<<<< HEAD
         safe_name = (
             Path(uploaded_file.name)
             .name
         )
+=======
+        safe_name = Path(
+            uploaded_file.name
+        ).name
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
 
         file_path = (
             upload_dir /
@@ -203,6 +269,49 @@ def save_uploaded_files(
         file_path.write_bytes(
             uploaded_file.getvalue()
         )
+<<<<<<< HEAD
+=======
+=======
+    with open("projects.json", "w", encoding="utf-8") as f:
+        json.dump(data, f)
+
+
+def generate_project_name(text):
+    words = text.lower().split()
+    ignore = ["build", "create", "make", "develop", "a", "an", "the"]
+    filtered = [word for word in words if word not in ignore]
+
+    return " ".join(filtered[:3]).title() if filtered else "New Project"
+
+
+def get_last_code_message(messages):
+    for msg in reversed(messages):
+        content = msg.get("content")
+        if isinstance(content, dict) and content.get("type") == "code":
+            return content.get("data")
+    return None
+
+
+def get_chat_text_and_files(chat_value):
+    if isinstance(chat_value, str):
+        return chat_value, []
+
+    text = getattr(chat_value, "text", "") or ""
+    files = getattr(chat_value, "files", []) or []
+    return text, files
+
+
+def save_uploaded_files(uploaded_files, project_id):
+    upload_dir = Path("uploads") / project_id
+    upload_dir.mkdir(parents=True, exist_ok=True)
+
+    saved_files = []
+    for uploaded_file in uploaded_files:
+        safe_name = Path(uploaded_file.name).name
+        file_path = upload_dir / f"{uuid.uuid4().hex}_{safe_name}"
+        file_path.write_bytes(uploaded_file.getvalue())
+>>>>>>> 8e40865095191439b0aa74490add438f1c48bbb0
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
 
         saved_files.append({
             "name": safe_name,
@@ -213,6 +322,10 @@ def save_uploaded_files(
     return saved_files
 
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
 # ---------------- STRUCTURE DETECTION ----------------
 def contains_structure(text):
 
@@ -274,6 +387,12 @@ def clean_response(text):
 # ---------------- RENDER CONTENT ----------------
 def render_message_content(content):
 
+<<<<<<< HEAD
+=======
+=======
+def render_message_content(content):
+>>>>>>> 8e40865095191439b0aa74490add438f1c48bbb0
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
     if not isinstance(content, dict):
         st.markdown(content)
         return
@@ -281,6 +400,10 @@ def render_message_content(content):
     rtype = content.get("type")
     data = content.get("data")
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
     if isinstance(data, str):
         data = clean_response(data)
 
@@ -289,12 +412,20 @@ def render_message_content(content):
 
         if isinstance(data, str):
 
+<<<<<<< HEAD
             # ASCII STRUCTURES
+=======
+            # ASCII STRUCTURE
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
             if contains_structure(data):
 
                 st.code(
                     data,
+<<<<<<< HEAD
                     language=None
+=======
+                    language="text"
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
                 )
 
             # CODE
@@ -337,12 +468,28 @@ def render_message_content(content):
 
         else:
             st.warning(
+<<<<<<< HEAD
                 "Generated image file missing."
+=======
+                "Image file missing."
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
             )
 
     # USER MEDIA
     elif rtype == "user_media":
 
+<<<<<<< HEAD
+=======
+=======
+    if rtype == "text":
+        st.markdown(data)
+    elif rtype == "code":
+        st.code(data)
+    elif rtype == "image":
+        st.image(data)
+    elif rtype == "user_media":
+>>>>>>> 8e40865095191439b0aa74490add438f1c48bbb0
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
         text = content.get("text")
         files = content.get("files", [])
 
@@ -350,6 +497,10 @@ def render_message_content(content):
             st.markdown(text)
 
         for file_info in files:
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
 
             mime_type = (
                 file_info.get("mime_type")
@@ -385,7 +536,11 @@ def render_message_content(content):
 
                 else:
                     st.warning(
+<<<<<<< HEAD
                         f"Image file missing: {file_info['name']}"
+=======
+                        f"Missing image file: {file_info['name']}"
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
                     )
 
             # OTHER FILES
@@ -394,10 +549,24 @@ def render_message_content(content):
                     f"📎 Attached file: `{file_info['name']}`"
                 )
 
+<<<<<<< HEAD
+=======
+=======
+            mime_type = file_info.get("mime_type") or ""
+            if mime_type.startswith("image/"):
+                st.image(file_info["path"], caption=file_info["name"])
+            else:
+                st.markdown(f"Attached file: `{file_info['name']}`")
+>>>>>>> 8e40865095191439b0aa74490add438f1c48bbb0
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
     else:
         st.markdown("Unknown response")
 
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
 # ---------------- TEXT RESPONSE ----------------
 def answer_text_message(
     user_input,
@@ -405,6 +574,10 @@ def answer_text_message(
     project_data
 ):
 
+<<<<<<< HEAD
+=======
+    # Detect request type
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
     is_code = router.is_coding_query(
         user_input
     )
@@ -417,7 +590,11 @@ def answer_text_message(
 
     # ==================================================
     # CODE GENERATION
+<<<<<<< HEAD
     # LOCAL ROUTER
+=======
+    # Local Router Only
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
     # ==================================================
     if is_code and not is_code_explanation:
 
@@ -437,18 +614,44 @@ IMPORTANT RULES:
 - Use modern best practices
 - Generate optimized solutions
 - Add comments where necessary
+<<<<<<< HEAD
 
 ASCII STRUCTURE RULES:
 - Generate clean multiline ASCII trees
 - Preserve hierarchy properly
 - Generate dynamic structures
 - DO NOT force fixed templates
+=======
+- Keep formatting professional
+
+ASCII STRUCTURE RULES:
+- If project structure is required,
+  generate professional ASCII hierarchy.
+
+- Structure MUST dynamically adapt
+  according to the project requirements.
+
+- DO NOT force fixed templates.
+
+Examples:
+- AI systems
+- MERN apps
+- ML pipelines
+- SaaS platforms
+- APIs
+- Microservices
+- Full-stack systems
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
 
 User Request:
 
 {user_input}
 """
 
+<<<<<<< HEAD
+=======
+            # LOCAL ROUTER
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
             code_output = router.handle_prompt(
                 generation_prompt
             )
@@ -460,7 +663,11 @@ User Request:
 
     # ==================================================
     # CODE EXPLANATION
+<<<<<<< HEAD
     # GEMINI API
+=======
+    # Gemini API Only
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
     # ==================================================
     elif is_code_explanation:
 
@@ -477,12 +684,27 @@ Explain the following code professionally.
 
 IMPORTANT RULES:
 - Preserve indentation exactly
+<<<<<<< HEAD
 - Preserve formatting exactly
 - Preserve spacing
 - Explain line by line
 - Explain functions clearly
 - Explain modules properly
 - Preserve ASCII structures naturally
+=======
+- Preserve spacing exactly
+- Preserve formatting exactly
+- Preserve line breaks
+- Explain line by line
+- Explain functions clearly
+- Explain modules properly
+- Explain architecture if present
+- Keep formatting clean
+
+ASCII STRUCTURE RULES:
+- Preserve folder hierarchy naturally
+- Preserve ASCII formatting naturally
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
 
 Code Context:
 
@@ -493,6 +715,10 @@ User Request:
 {user_input}
 """
 
+<<<<<<< HEAD
+=======
+            # GEMINI API
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
             explanation = (
                 llm_service.generate_response(
                     explanation_prompt
@@ -506,7 +732,11 @@ User Request:
 
     # ==================================================
     # GENERAL AI REASONING
+<<<<<<< HEAD
     # GEMINI API
+=======
+    # Gemini API Only
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
     # ==================================================
     else:
 
@@ -534,6 +764,7 @@ Provide:
 - scalable architecture suggestions
 - optimized workflows
 - software engineering guidance
+<<<<<<< HEAD
 - modern development practices
 
 IMPORTANT:
@@ -541,12 +772,27 @@ IMPORTANT:
 - Generate dynamic architectures
 - Use professional ASCII structures
 - Preserve hierarchy naturally
+=======
+- intelligent technical explanations
+- modern development practices
+
+IMPORTANT:
+- Preserve hierarchy naturally
+- Use professional formatting
+- Use ASCII formatting for structures
+- Generate dynamic architectures
+- Do NOT force fixed templates
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
 
 User Request:
 
 {user_input}
 """
 
+<<<<<<< HEAD
+=======
+            # GEMINI API
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
             response = (
                 llm_service.generate_response(
                     reasoning_prompt
@@ -561,7 +807,10 @@ User Request:
 
 # ---------------- UI ----------------
 st.title("⚡ AI Project Partner")
+<<<<<<< HEAD
 
+=======
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
 st.caption(
     "Code • Debug • Explain • Multimedia Analysis"
 )
@@ -581,11 +830,52 @@ if (
 
     st.session_state.current_project = pid
 
+<<<<<<< HEAD
+=======
+=======
+def answer_text_message(user_input, messages, project_data):
+    is_code = router.is_coding_query(user_input)
+    is_code_explanation = router.is_code_explanation_query(user_input)
+
+    if is_code:
+        spinner_text = "Explaining code..." if is_code_explanation else "Generating code..."
+
+        with st.spinner(spinner_text):
+            code_context = get_last_code_message(messages) if is_code_explanation else None
+            code_output = router.handle_prompt(user_input, code_context)
+            response_type = "text" if is_code_explanation else "code"
+            return {"type": response_type, "data": code_output}
+
+    if not project_data["started"]:
+        project_data["name"] = generate_project_name(user_input)
+        project_data["started"] = True
+        save_projects(st.session_state.projects)
+
+    with st.spinner("Thinking..."):
+        return handle_user_input(user_input, llm_service)
+
+
+st.title("⚡ AI Project Partner")
+st.caption("Chat-based AI Project Assistant")
+
+
+if "projects" not in st.session_state:
+    st.session_state.projects = load_projects()
+
+if "current_project" not in st.session_state or not st.session_state.projects:
+    pid = str(uuid.uuid4())
+    st.session_state.current_project = pid
+>>>>>>> 8e40865095191439b0aa74490add438f1c48bbb0
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
     st.session_state.projects[pid] = {
         "name": "New Project",
         "messages": [],
         "started": False,
     }
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
 
     save_projects(
         st.session_state.projects
@@ -596,18 +886,38 @@ if (
 st.sidebar.title("Projects")
 
 
+<<<<<<< HEAD
 # NEW PROJECT
+=======
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
 if st.sidebar.button("➕ New Project"):
 
     pid = str(uuid.uuid4())
 
     st.session_state.current_project = pid
 
+<<<<<<< HEAD
+=======
+=======
+    save_projects(st.session_state.projects)
+
+
+st.sidebar.title("Projects")
+
+if st.sidebar.button("New Project"):
+    pid = str(uuid.uuid4())
+    st.session_state.current_project = pid
+>>>>>>> 8e40865095191439b0aa74490add438f1c48bbb0
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
     st.session_state.projects[pid] = {
         "name": "New Project",
         "messages": [],
         "started": False,
     }
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
 
     save_projects(
         st.session_state.projects
@@ -620,7 +930,18 @@ current = st.session_state.current_project
 project_data = st.session_state.projects[current]
 
 
+<<<<<<< HEAD
 # RENAME PROJECT
+=======
+=======
+    save_projects(st.session_state.projects)
+    st.rerun()
+
+current = st.session_state.current_project
+project_data = st.session_state.projects[current]
+
+>>>>>>> 8e40865095191439b0aa74490add438f1c48bbb0
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
 new_name = st.sidebar.text_input(
     "Rename Project",
     value=project_data["name"],
@@ -628,6 +949,10 @@ new_name = st.sidebar.text_input(
 )
 
 if new_name != project_data["name"]:
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
 
     project_data["name"] = new_name
 
@@ -639,7 +964,10 @@ if new_name != project_data["name"]:
 st.sidebar.divider()
 
 
+<<<<<<< HEAD
 # SWITCH PROJECTS
+=======
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
 for pid, pdata in st.session_state.projects.items():
 
     if st.sidebar.button(
@@ -653,7 +981,10 @@ for pid, pdata in st.session_state.projects.items():
 st.sidebar.divider()
 
 
+<<<<<<< HEAD
 # CLEAR CHAT
+=======
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
 if st.sidebar.button(
     "🗑 Clear Current Chat"
 ):
@@ -686,6 +1017,7 @@ for msg in messages:
 # ---------------- CHAT INPUT ----------------
 chat_value = st.chat_input(
     "Type your request...",
+<<<<<<< HEAD
     accept_file="multiple",
     file_type=[
         "png", "jpg", "jpeg",
@@ -700,6 +1032,9 @@ chat_value = st.chat_input(
         "rb", "go", "rs",
         "sql", "log",
     ],
+=======
+    accept_file="multiple"
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
 )
 
 
@@ -781,11 +1116,30 @@ IMPORTANT RULES:
 - Preserve indentation exactly
 - Preserve spacing exactly
 - Preserve hierarchy naturally
+<<<<<<< HEAD
 - Preserve formatting
 - Explain professionally
 - Generate clean ASCII structures
 
 Uploaded Content:
+=======
+- Preserve line breaks
+- Preserve markdown formatting
+- Use proper code blocks
+- Explain professionally
+- Do NOT compress code
+
+ASCII STRUCTURE RULES:
+- Whenever generating structures,
+  ALWAYS use professional ASCII tree formatting.
+
+- Generate structures dynamically
+  according to the project requirements.
+
+- DO NOT use fixed templates.
+
+Uploaded content:
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
 
 {extracted_content}
 """
@@ -830,4 +1184,83 @@ Uploaded Content:
 
     save_projects(
         st.session_state.projects
+<<<<<<< HEAD
     )
+=======
+    )
+=======
+    project_data["name"] = new_name
+    save_projects(st.session_state.projects)
+
+st.sidebar.divider()
+
+for pid, pdata in st.session_state.projects.items():
+    if st.sidebar.button(pdata["name"], key=pid):
+        st.session_state.current_project = pid
+        st.rerun()
+
+st.sidebar.divider()
+
+if st.sidebar.button("Clear Current Chat"):
+    project_data["messages"] = []
+    project_data["started"] = False
+    project_data["name"] = "New Project"
+    save_projects(st.session_state.projects)
+    st.rerun()
+
+
+messages = project_data["messages"]
+
+for msg in messages:
+    with st.chat_message(msg["role"]):
+        render_message_content(msg["content"])
+
+
+chat_value = st.chat_input(
+    "Type your request...",
+    accept_file="multiple",
+    file_type=[
+        "png", "jpg", "jpeg", "webp", "gif", "bmp",
+        "pdf", "txt", "md", "csv", "json", "xml", "yaml", "yml",
+        "py", "js", "ts", "html", "css", "java", "cpp", "c",
+        "h", "hpp", "cs", "php", "rb", "go", "rs", "sql", "log",
+    ],
+)
+
+if chat_value:
+    user_input, uploaded_files = get_chat_text_and_files(chat_value)
+    saved_files = save_uploaded_files(uploaded_files, current)
+
+    user_content = (
+        {"type": "user_media", "text": user_input, "files": saved_files}
+        if saved_files
+        else user_input
+    )
+    messages.append({"role": "user", "content": user_content})
+    save_projects(st.session_state.projects)
+
+    with st.chat_message("user"):
+        render_message_content(user_content)
+
+    try:
+        if saved_files:
+            if not project_data["started"]:
+                project_data["name"] = generate_project_name(user_input or saved_files[0]["name"])
+                project_data["started"] = True
+                save_projects(st.session_state.projects)
+
+            with st.spinner("Analyzing attachment..."):
+                media_output = media_analyzer.analyze(user_input, saved_files)
+                response = {"type": "text", "data": media_output}
+        else:
+            response = answer_text_message(user_input, messages, project_data)
+    except Exception as e:
+        response = {"type": "text", "data": f"Error: {str(e)}"}
+
+    with st.chat_message("assistant"):
+        render_message_content(response)
+
+    messages.append({"role": "assistant", "content": response})
+    save_projects(st.session_state.projects)
+>>>>>>> 8e40865095191439b0aa74490add438f1c48bbb0
+>>>>>>> 4ca64e112040db182ea1d170d487ab2cfe6d46da
