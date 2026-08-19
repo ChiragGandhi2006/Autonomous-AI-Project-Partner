@@ -28,17 +28,17 @@ sys.path.append(
 )
 
 # ---------------- SECRETS ----------------
-# Streamlit Cloud secrets manager -> environment variables.
+# Local .env takes precedence; Streamlit Cloud secrets fill any gaps.
 # This MUST run before service modules are imported, so that
 # os.getenv("GEMINI_API_KEY") / os.getenv("OPENAI_API_KEY") resolve.
+load_dotenv(override=True)
+
 try:
     for _key, _value in st.secrets.items():
-        if _key not in os.environ:
+        if _key not in os.environ or not os.environ[_key]:
             os.environ[_key] = str(_value)
 except Exception:
     pass
-
-load_dotenv()
 
 from core.router import Router
 from services.llm_service import llm_service
