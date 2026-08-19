@@ -1,4 +1,5 @@
-transformers
-torch
+streamlit>=1.36
 google-generativeai
 python-dotenv
+requests
+openai

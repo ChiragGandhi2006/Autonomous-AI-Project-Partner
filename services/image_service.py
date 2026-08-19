@@ -1,20 +1,51 @@
 import base64
 import os
+import urllib.parse
+import uuid
+from pathlib import Path
 
+import requests
 from dotenv import load_dotenv
-from openai import OpenAI
-
 
 load_dotenv()
 
+try:
+    from openai import OpenAI
+except ImportError:
+    OpenAI = None
+
 
 class ImageService:
-    def __init__(self):
-        self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        self.pipe = None
-        self.device = None
+    """Cloud-safe image generation.
 
-    def generate_image_openai(self, prompt, filename="generated.png"):
+    Uses OpenAI (gpt-image-1) when an OPENAI_API_KEY is set, otherwise
+    falls back to pollinations.ai which needs no API key. No local models.
+    """
+
+    def __init__(self):
+        self.api_key = os.getenv("OPENAI_API_KEY")
+        self.client = (
+            OpenAI(api_key=self.api_key)
+            if OpenAI is not None and self.api_key
+            else None
+        )
+
+    def generate_image(self, prompt, filename="generated.png") -> str:
+        """Returns the saved image path, or raises on failure."""
+        prompt = (prompt or "").strip()
+
+        if not prompt:
+            raise ValueError("Prompt cannot be empty")
+
+        if self.client is not None:
+            try:
+                return self._generate_openai(prompt, filename)
+            except Exception as exc:
+                print("OpenAI image generation failed, falling back:", str(exc))
+
+        return self._generate_pollinations(prompt, filename)
+
+    def _generate_openai(self, prompt: str, filename: str) -> str:
         result = self.client.images.generate(
             model="gpt-image-1",
             prompt=prompt,
@@ -24,60 +55,53 @@ class ImageService:
         image_base64 = result.data[0].b64_json
         image_bytes = base64.b64decode(image_base64)
 
-        with open(filename, "wb") as f:
-            f.write(image_bytes)
+        output_path = Path(filename)
+        output_path.write_bytes(image_bytes)
 
-        return filename
+        return str(output_path)
 
-    def _load_local_pipeline(self):
-        if self.pipe is not None:
-            return
+    def _generate_pollinations(self, prompt: str, filename: str) -> str:
+        enhanced_prompt = (
+            f"{prompt}, high quality, modern, professional, realistic, detailed"
+        )
+
+        image_url = (
+            "https://image.pollinations.ai/prompt/"
+            f"{urllib.parse.quote(enhanced_prompt)}"
+            "?width=1024&height=1024&nologo=true"
+        )
 
         try:
-            import torch
-            from diffusers import StableDiffusionPipeline
+            response = requests.get(image_url, timeout=90)
+            response.raise_for_status()
+        except requests.exceptions.Timeout:
+            raise RuntimeError("Image generation timed out")
+        except Exception as exc:
+            raise RuntimeError(f"Image service failed: {exc}")
 
-            self.device = "cuda" if torch.cuda.is_available() else "cpu"
-            self.pipe = StableDiffusionPipeline.from_pretrained(
-                "runwayml/stable-diffusion-v1-5"
-            ).to(self.device)
-        except Exception as e:
-            print("Local image model unavailable:", str(e))
-            self.pipe = None
+        content_type = response.headers.get("Content-Type", "")
+        if "image" not in content_type:
+            raise RuntimeError("Invalid image response from service")
 
-    def generate_image_local(self, prompt, filename="generated.png"):
-        self._load_local_pipeline()
+        output_path = Path(filename)
+        output_path.write_bytes(response.content)
 
-        if self.pipe is None:
-            return "Free image model not available"
+        return str(output_path)
 
-        image = self.pipe(prompt).images[0]
-        image.save(filename)
+    def edit_image(self, image_path: str, prompt: str, filename="edited.png") -> str:
+        if self.client is None:
+            raise RuntimeError("Image editing requires an OPENAI_API_KEY")
 
-        return filename
+        result = self.client.images.edit(
+            model="gpt-image-1",
+            image=open(image_path, "rb"),
+            prompt=prompt,
+        )
 
-    def generate_image(self, prompt, filename="generated.png"):
-        try:
-            return self.generate_image_openai(prompt, filename)
-        except Exception as e:
-            print("OpenAI image generation failed. Trying local model:", str(e))
-            return self.generate_image_local(prompt, filename)
+        image_base64 = result.data[0].b64_json
+        image_bytes = base64.b64decode(image_base64)
 
-    def edit_image(self, image_path, prompt, filename="edited.png"):
-        try:
-            result = self.client.images.edit(
-                model="gpt-image-1",
-                image=open(image_path, "rb"),
-                prompt=prompt,
-            )
+        output_path = Path(filename)
+        output_path.write_bytes(image_bytes)
 
-            image_base64 = result.data[0].b64_json
-            image_bytes = base64.b64decode(image_base64)
-
-            with open(filename, "wb") as f:
-                f.write(image_bytes)
-
-            return filename
-
-        except Exception as e:
-            return f"Edit failed: {str(e)}"
+        return str(output_path)
